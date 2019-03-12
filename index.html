@@ -1,0 +1,333 @@
+<canvas id="screen" width="600" height="600" style="border:1px solid #555555;"></canvas>
+<!--
+  vim: shiftwidth=2 tabstop=2
+-->
+<script>
+var keyBool = new Array(128).fill(false);
+var Screen = {
+  width: 600,
+  height: 600,
+  context: null,
+  blockSize: 20,
+  fps: 100.0,
+
+  colors: {
+    background: "#555555",
+    block: "#fff200",
+    food: "#ff0000",
+    backBlock: "#000000",
+    pause: "#333333AA",
+    gameover: "#ffffff"
+  },
+
+  display() {
+    context = this.context;
+    colors = this.colors;
+
+    // clean screen
+    context.fillStyle = colors.background;
+    context.fillRect(0, 0, screen.width, screen.height);
+
+    for (var x = 0; x < Map.width; x++) {
+      for (var y = 0; y < Map.height; y++) {
+        blockPaint(Map.display.x, Map.display.y, x, y, Map.data[x][y]);
+      }
+    }
+
+    // pause
+
+
+    // gameover
+    if (Game.isGameover) {
+      // draw background
+      context.fillStyle = colors.pause;
+      context.fillRect(0, 0, screen.width, screen.height);
+
+      context.fillStyle = colors.gameover;
+      context.textBaseline = "middle";
+      context.font = "30px Arial";
+      context.fillText("GameOver", 20, 20);
+      context.fillText("Length: " + Game.snake.length(), 20, 50);
+    } else if (Game.pause) {
+      context.fillStyle = colors.pause;
+      context.fillRect(0, 0, screen.width, screen.height);
+    }
+  }
+};
+
+class Map  {
+  static data = null; // 0:empty, 1: snake, 2: food
+  static height = 29;
+  static width = 29;
+  static display = {
+    x: 10,
+    y: 10
+  };
+
+  static newMap() {
+    // allocation new map data
+    this.data = Array.from(Array(this.width),
+    () => Array(this.height).fill(0));
+  }
+
+  static getEmptyPoint() {
+    var result = null;
+    var emptyPoints = [];
+
+    // filtering an empty block
+    for (var x = 0; x < this.width; x++) {
+      for (var y = 0; y < this.height; y++) {
+        if (this.data[x][y] == 0)
+          emptyPoints.push({ x: x, y: y });
+      }
+    }
+
+    // pick one point
+    if (emptyPoints.length > 0)
+      result = emptyPoints[Math.floor(Math.random() * emptyPoints.length)];
+
+    return result;
+  }
+
+  static createFood() {
+    var newPoint = this.getEmptyPoint();
+    if (newPoint) {
+      this.data[newPoint.x][newPoint.y] = 2;
+    }
+  }
+};
+
+var Direction = {
+  Right: 1,
+  Left: 2,
+  Down: 3,
+  Up: 4
+};
+
+function getNextXY(curXY, direction, width, height) {
+  switch (direction) {
+    case Direction.Right:
+      curXY.x++;
+      break;
+
+    case Direction.Left:
+      curXY.x--;
+      break;
+
+    case Direction.Up:
+      curXY.y--;
+      break;
+
+    case Direction.Down:
+      curXY.y++;
+      break;
+  }
+
+  // bounder
+  curXY.x = (width + curXY.x) % width;
+  curXY.y = (height + curXY.y) % height;
+
+  return curXY;
+}
+
+class Snake {
+  queue = [];
+
+  head = {
+    direction: null,
+    x: null,
+    y: null
+  };
+
+  constructor() {
+    this.queue = [];
+
+    this.head.direction = Math.floor(Math.random() * 4 + 1);
+    this.head.x = Math.floor(Math.random() * Map.width);
+    this.head.y = Math.floor(Math.random() * Map.height);
+
+    // put first block
+    Map.data[this.head.x][this.head.y] = 1;
+    this.queue.push({
+      x: this.head.x,
+      y: this.head.y
+    });
+  }
+
+  setDirection(newDirection) {
+    var nextXY = getNextXY(Object.assign({}, this.head),
+      newDirection, Map.width, Map.height);
+
+    // if new Direction not suicide change it
+    if (Map.data[nextXY.x][nextXY.y] != 1)
+      this.head.direction = newDirection;
+
+  }
+
+  step() {
+    // move head
+    this.head = getNextXY(this.head, this.head.direction, Map.width, Map.height);
+
+    if (Map.data[this.head.x][this.head.y] == 2) {
+      // if not eat
+      Map.createFood();
+    } else if (Map.data[this.head.x][this.head.y] == 1) {
+      // suicide
+      Game.gameover();
+    } else {
+      var tail = this.queue.shift();
+      Map.data[tail.x][tail.y] = 0;
+    }
+
+    // moving
+    Map.data[this.head.x][this.head.y] = 1;
+    this.queue.push({
+      x: this.head.x,
+      y: this.head.y
+    });
+  }
+
+  length() {
+    return this.queue.length;
+  }
+}
+
+var Game = {
+  running: false,
+  pause: false,
+  isGameover: false,
+  speed: 0,
+  snake: null,
+  displayTimer: null,
+
+  newGame() {
+    this.running    = true;
+    this.isGameover = false;
+    this.pause = false
+    this.speed = 100;
+    this.snake = new Snake();
+
+    for (i = 0; i < 5; i++)
+      Map.createFood();
+  },
+
+  gameover() {
+    clearInterval(this.displayTimer);
+    this.pause   = true;
+    this.running = false;
+    this.isGameover = true;
+    Screen.display();
+  },
+
+  tick() {
+    Game.snake.step();
+    Screen.display();
+  },
+
+  pauseToggle() {
+    this.pause = !this.pause;
+    if (this.pause || !this.running)
+      clearInterval(this.displayTimer);
+    else
+      this.displayTimer = setInterval(this.tick, this.speed);
+  },
+
+  start() {
+    Map.newMap();
+    this.newGame();
+
+    if (this.displayTimer)
+      clearInterval(this.displayTimer);
+
+    this.displayTimer = setInterval(this.tick, this.speed);
+
+    // display map
+    Screen.display();
+  }
+};
+
+
+function blockPaint(onScreenX, onScreenY, x, y, useBlackground) {
+  context = Screen.context;
+  colors = Screen.colors;
+
+  if (useBlackground == 0)
+    context.fillStyle = colors.backBlock;
+  else if (useBlackground == 2)
+    context.fillStyle = colors.food;
+  else
+    context.fillStyle = colors.block;
+
+  context.fillRect(onScreenX + (Screen.blockSize) * x + 1,
+    onScreenY + (Screen.blockSize) * y + 1,
+    Screen.blockSize - 2, Screen.blockSize - 2);
+}
+
+function keyDown(e) {
+  e = e || window.event;
+  if (!(e.keyCode < 128) || keyBool[e.keyCode] == true)
+    return;
+
+  keyBool[e.keyCode] == true;
+  console.log("keyDown");
+
+  if ([38, 40, 37, 39, 32, 27].indexOf(e.keyCode) > -1)
+    e.preventDefault();
+
+  if (Game.running == true && !Game.pause) {
+
+    snake = Game.snake;
+
+    if (e.keyCode == '38') // up
+      snake.setDirection(Direction.Up);
+
+    if (e.keyCode == '40') // down
+      snake.setDirection(Direction.Down);
+
+    if (e.keyCode == '37') // left
+      snake.setDirection(Direction.Left);
+
+    if (e.keyCode == '39') // right
+      snake.setDirection(Direction.Right);
+
+    if (e.keyCode == '82') // r to restart
+      Game.start();
+  }
+
+  if (e.keyCode == '27') // esc pause
+    Game.pauseToggle();
+
+  Screen.display();
+}
+
+function keyUp(e) {
+  e = e || window.event;
+  if (e.keyCode < 128 && keyBool[e.keyCode] == true)
+    keyBool[e.keyCode] == false;
+
+}
+
+function load() {
+  // set screen
+  screen1 = document.getElementById('screen');
+  context = Screen.context = screen1.getContext('2d');
+
+  // init
+  Game.start();
+}
+
+window.onload    = load;
+window.onkeydown = keyDown;
+window.onkeyup   = keyUp;
+</script>
+<ul>
+    <li>"arrow" key to control direction</li>
+    <li>"r" key to restart game</li>
+    <li>"Esc" key to pause game</li>
+</ul>
+<br>
+<a href="https://github.com/r888800009/snake-js">
+    <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub">
+</a>
+<br>
+<a href="https://github.com/r888800009/">r888800009</a>
