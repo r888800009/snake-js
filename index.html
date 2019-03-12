@@ -290,12 +290,14 @@ function keyDown(e) {
     if (e.keyCode == '39') // right
       snake.setDirection(Direction.Right);
 
-    if (e.keyCode == '82') // r to restart
-      Game.start();
+
   }
 
   if (e.keyCode == '27') // esc pause
     Game.pauseToggle();
+
+  if (e.keyCode == '82') // r to restart
+    Game.start();
 
   Screen.display();
 }
