@@ -1,7 +1,15 @@
-<canvas id="screen" width="600" height="600" style="border:1px solid #555555;"></canvas>
+<html>
 <!--
   vim: shiftwidth=2 tabstop=2
 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+<body>
+<canvas id="Screen" width="100%" height="100%" style="border:none; padding: 0; display: block;"></canvas>
+<style>
+  body {
+    margin: 0;
+  }
+</style>
 <script>
 var keyBool = new Array(128).fill(false);
 var Screen = {
@@ -24,9 +32,9 @@ var Screen = {
     context = this.context;
     colors = this.colors;
 
-    // clean screen
+    // clean Screen
     context.fillStyle = colors.background;
-    context.fillRect(0, 0, screen.width, screen.height);
+    context.fillRect(0, 0, Screen.width, Screen.height);
 
     for (var x = 0; x < Map.width; x++) {
       for (var y = 0; y < Map.height; y++) {
@@ -37,7 +45,7 @@ var Screen = {
     if (Game.isGameover) {
       // draw background
       context.fillStyle = colors.pause;
-      context.fillRect(0, 0, screen.width, screen.height);
+      context.fillRect(0, 0, Screen.width, Screen.height);
 
       context.fillStyle = colors.gameover;
       context.textBaseline = "middle";
@@ -46,7 +54,7 @@ var Screen = {
       context.fillText("Length: " + Game.snake.length(), 20, 50);
     } else if (Game.pause) {
       context.fillStyle = colors.pause;
-      context.fillRect(0, 0, screen.width, screen.height);
+      context.fillRect(0, 0, Screen.width, Screen.height);
     }
   }
 };
@@ -305,27 +313,43 @@ function keyUp(e) {
 
 }
 
+function resize() {
+  var minLength = window.innerWidth < window.innerHeight ? window.innerWidth : window.innerHeight;
+  context.canvas.width = minLength;
+  context.canvas.height = minLength;
+
+  context.scale(context.canvas.width / Screen.width,
+    context.canvas.height / Screen.height);
+}
+
 function load() {
-  // set screen
-  screen1 = document.getElementById('screen');
+  // set Screen
+  screen1 = document.getElementById('Screen');
   context = Screen.context = screen1.getContext('2d');
+
+  resize();
 
   // init
   Game.start();
 }
 
+
+
 window.onload    = load;
+window.onresize  = resize;
 window.onkeydown = keyDown;
 window.onkeyup   = keyUp;
 </script>
-<ul>
-    <li>"arrow" key to control direction</li>
-    <li>"r" key to restart game</li>
-    <li>"Esc" key to pause game</li>
-</ul>
-<br>
-<a href="https://github.com/r888800009/snake-js">
-    <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub">
-</a>
-<br>
-<a href="https://github.com/r888800009/">r888800009</a>
+<div>
+  <ul>
+      <li>"arrow" key to control direction</li>
+      <li>"r" key to restart game</li>
+      <li>"Esc" key to pause game</li>
+  </ul>
+  <br>
+
+  <br>
+  <a href="https://github.com/r888800009/">r888800009</a>
+</div>
+</body>
+</html>
