@@ -327,13 +327,70 @@ function load() {
   screen1 = document.getElementById('Screen');
   context = Screen.context = screen1.getContext('2d');
 
+  // mouse and touchscreen
+  screen1.addEventListener('touchstart', touchDown);
+  screen1.addEventListener('touchend', touchUp);
+  screen1.addEventListener('mousedown', mouseDown);
+  screen1.addEventListener('mouseup', mouseUp);
+
   resize();
 
   // init
   Game.start();
 }
 
+function setDirectionByChanged(diffXY) {
+  // get max diff
+  var max = Math.abs(diffXY.x) > Math.abs(diffXY.y) ? diffXY.x : diffXY.y;
 
+  var sensitivity = 5;
+  if (Math.abs(max) > sensitivity) {
+    snake = Game.snake;
+    if (Math.abs(diffXY.x) > Math.abs(diffXY.y)) {
+      // x axis
+      if (diffXY.x > 0) 
+        snake.setDirection(Direction.Right);
+      else
+        snake.setDirection(Direction.Left);
+    } else {
+      // y axis
+      if (diffXY.y < 0) 
+        snake.setDirection(Direction.Up);
+      else 
+        snake.setDirection(Direction.Down);
+    }
+  }
+}
+
+var touchXY = { x: 0, y: 0 };
+
+function mouseDown(e) {
+  touchXY.x = e.pageX;
+  touchXY.y = e.pageY;
+}
+
+function mouseUp(e) {
+  var diffXY = {
+    x: e.pageX - touchXY.x,
+    y: e.pageY - touchXY.y
+  };
+
+  setDirectionByChanged(diffXY);
+}
+
+function touchDown(e) {
+  touchXY.x = e.touches[0].pageX;
+  touchXY.y = e.touches[0].pageY;
+}
+
+function touchUp(e) {
+  var diffXY = {
+    x: e.changedTouches[0].pageX - touchXY.x,
+    y: e.changedTouches[0].pageY - touchXY.y
+  };
+
+  setDirectionByChanged(diffXY);
+}
 
 window.onload    = load;
 window.onresize  = resize;
@@ -342,7 +399,7 @@ window.onkeyup   = keyUp;
 </script>
 <div>
   <ul>
-      <li>"arrow" key to control direction</li>
+      <li>"arrow" key, "mouse", "touchscreen" to control direction</li>
       <li>"r" key to restart game</li>
       <li>"Esc" key to pause game</li>
   </ul>
