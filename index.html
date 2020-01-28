@@ -274,8 +274,13 @@ function keyDown(e) {
 
   keyBool[e.keyCode] == true;
   console.log("keyDown");
+  keycodes = [32, 27]
+  hjkl = [72, 74, 75, 76];
+  keycodes = keycodes.concat(hjkl);
+  arrow = [38, 40, 37, 39];
+  keycodes = keycodes.concat(arrow);
 
-  if ([38, 40, 37, 39, 32, 27].indexOf(e.keyCode) > -1)
+  if (keycodes.indexOf(e.keyCode) > -1)
     e.preventDefault();
 
   if (Game.running == true && !Game.pause) {
@@ -294,6 +299,18 @@ function keyDown(e) {
     if (e.keyCode == '39') // right
       snake.setDirection(Direction.Right);
 
+    // hjkl bind
+    if (e.keyCode == '75') // k: up
+      snake.setDirection(Direction.Up);
+
+    if (e.keyCode == '74') // j: down
+      snake.setDirection(Direction.Down);
+
+    if (e.keyCode == '72') // h: left
+      snake.setDirection(Direction.Left);
+
+    if (e.keyCode == '76') // l: right
+      snake.setDirection(Direction.Right);
 
   }
 
@@ -399,7 +416,7 @@ window.onkeyup   = keyUp;
 </script>
 <div>
   <ul>
-      <li>"arrow" key, "mouse", "touchscreen" to control direction</li>
+      <li>"arrow" key, "hjkl", "mouse", "touchscreen" to control direction</li>
       <li>"r" key to restart game</li>
       <li>"Esc" key to pause game</li>
   </ul>
